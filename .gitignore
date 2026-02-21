@@ -1,0 +1,96 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Virtual Environments
+# =========================
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Build / Distribution
+# =========================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# =========================
+# Packaging
+# =========================
+pip-wheel-metadata/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =========================
+# Test / Coverage
+# =========================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
+# =========================
+# Type checking
+# =========================
+.mypy_cache/
+.pyright/
+.dmypy.json
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Jupyter / Notebooks
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Local databases / caches
+# =========================
+*.sqlite3
+*.db
+
+# =========================
+# Async / Task frameworks
+# =========================
+celerybeat-schedule
+celerybeat.pid
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(pip:*)",
+      "Bash(.venvScriptspython.exe main.py)",
+      "Bash(.venvScriptspython main.py)",
+      "Bash(python main.py:*)"
+    ]
+  }
+}
