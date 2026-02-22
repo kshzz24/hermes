@@ -25,7 +25,6 @@ class TokenUsage:
                   cached_tokens= self.cached_tokens+other.cached_tokens,
            )      
 
-@dataclass
 class StreamEventType(str, Enum):
         TEXT_DELTA = "text_delta"
         MESSAGE_COMPLETE = "message_complete"

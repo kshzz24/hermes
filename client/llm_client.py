@@ -81,8 +81,8 @@ class LLMClient:
             
     
     async def _stream_response(self,client:AsyncOpenAI, kwargs: dict[str,Any])->AsyncGenerator[StreamEvent, None]:
-          response = await client.chat.completions.create(**kwargs)
           
+          response = await client.chat.completions.create(**kwargs)
           usage: TokenUsage | None = None
           finish_reason: str | None = None
 

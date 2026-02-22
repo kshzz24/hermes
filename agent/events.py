@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 from client.response import TokenUsage
 from dataclasses import dataclass, field
 from enum import Enum

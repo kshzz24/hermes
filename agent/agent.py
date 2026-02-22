@@ -1,3 +1,4 @@
+from __future__ import annotations
 from agent.events import AgentEventType
 from client.llm_client import LLMClient
 from agent.events import AgentEvent
@@ -13,7 +14,7 @@ class Agent:
      async def run(self, message:str):
         yield AgentEvent.agent_start(message)
         # add user context message for the context
-
+        final_response:str | None = None
         async for event in self._agentic_loop():
             yield event
 
@@ -30,9 +31,10 @@ class Agent:
 
         async for event in self.client.chat_completion(messages, True):
             if event.type == StreamEventType.TEXT_DELTA:
-                 content = event.text_delta.content
-                 response_text += content
-                 yield AgentEvent.text_delta(content)
+                if event.text_delta: 
+                    content = event.text_delta.content
+                    response_text += content
+                    yield AgentEvent.text_delta(content)
             elif event.type == StreamEventType.ERROR:
                  yield AgentEvent.agent_error(event.error or "Unknown error occured")
 
