@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tools.base import ToolResult
 from client.response import TokenUsage
 from dataclasses import dataclass, field
 from enum import Enum
@@ -17,8 +18,9 @@ class AgentEventType(str, Enum):
      TEXT_COMPLETE="text_complete"
 
      #tool related
-     TOOL_CALL = "tool_call"
-     TOOL_RESULT = "tool_result"
+     TOOL_CALL_START = "tool_call_start"
+     TOOL_CALL_DELTA = "tool_call_delta"
+     TOOL_CALL_COMPLETE = "tool_call_complete"
 
 
 @dataclass
@@ -53,10 +55,22 @@ class AgentEvent:
                data={"error": error,"details": details or {}},
           )
      @classmethod
-     def text_delta(cls, content: str)-> AgentEvent:
+     def tool_call_start(cls, call_id: str, name: str, arguments:dict[str, Any])-> AgentEvent:
           return cls(
-               type=AgentEventType.TEXT_DELTA,
-               data={"content": content},
+               type=AgentEventType.TOOL_CALL_START,
+               data={"call_id": call_id, "name": name, "arguments": arguments},
+          )
+     @classmethod
+     def tool_call_delta(cls, call_id: str, arguments:str)-> AgentEvent:
+          return cls(
+               type=AgentEventType.TOOL_CALL_DELTA,
+               data={"call_id": call_id, "arguments": arguments},
+          )
+     @classmethod
+     def tool_call_complete(cls, call_id: str, name: str, result:ToolResult)-> AgentEvent:
+          return cls(
+               type=AgentEventType.TOOL_CALL_COMPLETE,
+               data={"call_id": call_id, "name": name, "success": result.success, "output": result.output, "error": result.error, "metadata": result.metadata},
           )
      @classmethod
      def text_complete(cls, content: str)-> AgentEvent:

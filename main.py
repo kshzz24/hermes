@@ -28,6 +28,7 @@ class CLI:
 
            
            async for event in self.agent.run(message):
+                print(event)
                 if event.type == AgentEventType.TEXT_DELTA:
                     content = event.data.get("content","")
                     if not assistant_streaming:
@@ -42,6 +43,22 @@ class CLI:
                 elif event.type == AgentEventType.AGENT_ERROR:
                     error = event.data.get("error", "Unknown error")
                     console.print(f"\n[error] Error: {error}[/error]")
+                elif event.type == AgentEventType.TOOL_CALL_START:
+                    tool_name = event.data.get("name")
+                    tool_kind = None
+                    tool = self.agent.tool_registry.get(tool_name)
+                    if not tool:
+                         return tool_kind
+
+                    tool_kind = tool.kind.value
+                    # call_id = event.data.get("call_id")
+                    # arguments = event.data.get("arguments")
+                    self.tui.tool_call_start(call_id, name, arguments)
+                elif event.type == AgentEventType.TOOL_CALL_COMPLETE:
+                    name = event.data.get("name")
+                    call_id = event.data.get("call_id")
+                    result = event.data.get("result")
+                    self.tui.end_tool_call(call_id, name, result)
                    
            return final_response
 
