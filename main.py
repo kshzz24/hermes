@@ -20,6 +20,30 @@ class CLI:
                self.agent = agent
                return await self.process_message(message)
 
+     async def run_interactive(self)-> None:
+        self.tui.print_welcome("ClaudeKode", lines=[
+            "Welcome to ClaudeKode",
+            "Type /exit to quit",
+            "Type /help for help",
+        ])
+
+        async with Agent() as agent:
+               self.agent = agent
+
+               while True:
+                  try:
+                    user_input = console.input("\n[user] > [/user] ").strip()
+                    if not user_input:
+                         continue
+                    if user_input.lower() == "/exit":
+                         break
+                    await self.process_message(user_input)
+                  except KeyboardInterrupt:
+                        console.print(f"\n[dim]Use /exit to quit[/dim]")
+                  except EOFError:
+                        break  
+        console.print("\n[dim]Goodbye![/dim]")
+
      def _get_tool_kind(self, tool_name:str) -> str | None:
          tool_kind = None
          tool = self.agent.tool_registry.get(tool_name)
@@ -91,6 +115,8 @@ def main(prompt: str | None):
         result = asyncio.run(cli.run_single(prompt))
         if result is None:
              sys.exit(1)
+    else:
+        asyncio.run(cli.run_interactive())         
         
    
 main()

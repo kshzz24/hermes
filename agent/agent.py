@@ -1,12 +1,11 @@
 from __future__ import annotations 
+from agent.events import AgentEventType, AgentEvent
 from client.response import ToolResultMessage
 from pathlib import Path
 from client.response import ToolCall
 from tools.registry import create_default_registry
 from context.manager import ContextManager
-from agent.events import AgentEventType
 from client.llm_client import LLMClient
-from agent.events import AgentEvent
 from client.response import StreamEventType
 from typing import AsyncGenerator
 
@@ -52,7 +51,14 @@ class Agent:
             elif event.type == StreamEventType.ERROR:
                  yield AgentEvent.agent_error(event.error or "Unknown error occured")
         
-        self.context_manager.add_assistant_message(response_text or None)
+        self.context_manager.add_assistant_message(response_text or None, [{
+          "id": tc.call_id,
+          "type": "function",
+          "function":{
+               'name': tc.name,
+               'arguments': str(tc.arguments),
+          },
+        } for tc in tool_calls] if tool_calls else None)
         if response_text: 
             yield AgentEvent.text_complete(response_text)
         

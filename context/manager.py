@@ -33,9 +33,14 @@ class ContextManager:
           item = MessageItem(role="user", content=content, token_count=count_tokens(content,self.model_name))
           self.messages.append(item) 
      
-     def add_assistant_message(self, content:str)-> None:
+     def add_assistant_message(
+          self, 
+          content:str, 
+          tool_calls:list[dict[str,Any]]|None = None)-> None:
+          
+
           content = content or ""
-          item = MessageItem(role="assistant", content=content, token_count=count_tokens(content,self.model_name))
+          item = MessageItem(role="assistant", content=content, tool_calls=tool_calls or [], token_count=count_tokens(content,self.model_name))
           self.messages.append(item) 
           
      def get_messages(self) -> list[dict[str,Any]]:
