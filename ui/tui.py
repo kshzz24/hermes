@@ -13,6 +13,7 @@ from rich.text import Text
 from rich import box
 from rich.console import Group
 from typing import Tuple
+from config.config import Config
 import re
 
 AGENT_THEME = Theme(
@@ -54,12 +55,13 @@ def get_console()->Console:
 
 
 class TUI:
-     def __init__(self, console:Console | None = None) -> None:
+     def __init__(self, config:Config, console:Console | None = None) -> None:
           self.console = console or get_console()
+          self.config = config
           self.assistant_stream_open = False
           self._tool_args_by_call_id:dict[str, dict[str,Any]] = {}
           # self.config = config
-          self.cwd =Path.cwd()
+          self.cwd =self.config.cwd
           self._max_block_tokens = 2500
 
      def begin_assistant(self)-> None:

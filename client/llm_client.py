@@ -1,3 +1,4 @@
+from config.config import Config
 from client.response import parse_tool_call_arguments
 from client.response import ToolCallDelta, ToolCall
 from openai import APIConnectionError, APIError
@@ -12,16 +13,20 @@ import asyncio
 
 
 class LLMClient:
-    def __init__(self) -> None:
+    def __init__(self, config:Config) -> None:
         self._client: AsyncOpenAI | None = None
         self._max_retries:int = 3
-     
+        self.config = config
+        # print(config)
     
     def get_client(self) ->AsyncOpenAI:
         if self._client is None:
+            # print(self.config)
+            # print(f"DEBUG api_key={self.config.api_key!r}")
+            # print(f"DEBUG base_url={self.config.base_url!r}")
             self._client = AsyncOpenAI(
-                api_key='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',
-                base_url='https://openrouter.ai/api/v1',
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
             )
         return self._client
     
@@ -54,7 +59,7 @@ class LLMClient:
 
         client = self.get_client();
         kwargs = {
-                "model": "z-ai/glm-4.5-air:free",  # Automatically selects best available model
+                "model": self.config.model_name,  # Automatically selects best available model
                 "messages": messages,
                 "stream": stream,
         }   
@@ -235,3 +240,5 @@ class LLMClient:
                 delay = base_delay * (2 ** attempt)
                 print(f"Rate limit hit. Retrying in {delay} seconds... (attempt {attempt + 1}/{max_retries})")
                 await asyncio.sleep(delay)
+
+                

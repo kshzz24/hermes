@@ -24,10 +24,11 @@ class MessageItem:
           return result
 
 class ContextManager:
-     def __init__(self) -> None:
-          self.system_prompt = get_system_prompt()
+     def __init__(self,config) -> None:
+          self.config = config
+          self.system_prompt = get_system_prompt(config)
           self.messages: list[MessageItem] = []
-          self.model_name = 'z-ai/glm-4.5-air:free'
+          self.model_name = self.config.model_name
 
      def add_user_message(self, content:str)-> None:
           item = MessageItem(role="user", content=content, token_count=count_tokens(content,self.model_name))
