@@ -1,4 +1,5 @@
 
+from enum import Enum
 from typing import Any
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -10,11 +11,32 @@ class ModelConfig(BaseModel):
      context_window: int = 256_000
 
      
+class ShellEnvironmentPolicy(BaseModel):
+    ignore_default_excludes: bool = False
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: ["*KEY*", "*TOKEN*", "*SECRET*"]
+    )
+    set_vars: dict[str, str] = Field(default_factory=dict)
 
 
+class ApprovalPolicy(str, Enum):
+    ON_REQUEST = "on-request"
+    ON_FAILURE = "on-failure"
+    AUTO = "auto"
+    AUTO_EDIT = "auto-edut"
+    NEVER = "never"
+    YOLO = "yolo"
+
+class HookTrigger(str, Enum):
+    BEFORE_AGENT = "before_agent"
+    AFTER_AGENT = "after_agent"
+    BEFORE_TOOL = "before_tool"
+    AFTER_TOOL = "after_tool"
+    ON_ERROR = "on_error"
 class Config(BaseModel): 
      model: ModelConfig = Field(default_factory=ModelConfig)
      cwd:Path = Field(default_factory=Path.cwd)
+     shell_environment:ShellEnvironmentPolicy = Field(default_factory=ShellEnvironmentPolicy)
      max_turns:int = 100
      max_tool_output_tokens:int = 50_000
      developers_instructions: str | None = None

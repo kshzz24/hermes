@@ -96,14 +96,16 @@ class CLI:
                    
                     tool_kind = self._get_tool_kind(tool_name)
                     self.tui.tool_call_complete(
-                    call_id, 
-                    tool_name, 
-                    tool_kind, 
+                    call_id,
+                    tool_name,
+                    tool_kind,
                     event.data.get("success", False),
                     event.data.get("output", ""),
                     event.data.get("error"),
                     event.data.get("metadata"),
+                    event.data.get("diff"),
                     event.data.get("truncated", False),
+                    event.data.get('exit_code')
                     )
                    
            return final_response

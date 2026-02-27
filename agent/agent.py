@@ -1,4 +1,5 @@
-from __future__ import annotations 
+from __future__ import annotations
+import json
 from config.config import Config
 from agent.events import AgentEventType, AgentEvent
 from client.response import ToolResultMessage
@@ -58,7 +59,7 @@ class Agent:
                "type": "function",
                "function":{
                     'name': tc.name,
-                    'arguments': str(tc.arguments),
+                    'arguments': json.dumps(tc.arguments) if isinstance(tc.arguments, dict) else tc.arguments,
                },
           } for tc in tool_calls] if tool_calls else None)
 

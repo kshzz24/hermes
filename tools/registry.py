@@ -1,3 +1,5 @@
+
+from config.config import Config
 from tools.builtin import get_all_builtin_tools
 from tools.base import ToolInvocation
 from tools.base import ToolResult
@@ -8,8 +10,9 @@ from tools.base import Tool
 logger = logging.getLogger(__name__)
 
 class ToolRegistry: 
-    def __init__(self):
+    def __init__(self, config:Config):
         self._tools: dict[str, Tool] = {} 
+        self.config = config
 
     def register(self, tool: Tool)-> None:
         if tool.name in self._tools:
@@ -63,10 +66,10 @@ class ToolRegistry:
 
 
 
-def create_default_registry() -> ToolRegistry:
-     registry = ToolRegistry()
+def create_default_registry(config:Config) -> ToolRegistry:
+     registry = ToolRegistry(config)
      BUILTIN_TOOLS = get_all_builtin_tools()
      for tool in BUILTIN_TOOLS:
-          registry.register(tool())
+          registry.register(tool(config))
 
      return registry

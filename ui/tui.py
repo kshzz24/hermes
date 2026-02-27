@@ -251,7 +251,9 @@ class TUI:
           output: str,
           error: str | None,
           metadata: dict[str, Any]  | None, 
+          diff: str | None,
           truncated: bool,
+          exit_code: int | None
      ) -> None:
           
           border_style = f"tool.{tool_kind}" if tool_kind else "tool"
@@ -264,7 +266,7 @@ class TUI:
             ("  ", "muted"),
             (f"#{call_id[:8]}", "muted"),
           )
-
+          args = self._tool_args_by_call_id.get(call_id, {})
           primary_path = None
           blocks = []
 
@@ -316,9 +318,32 @@ class TUI:
                         word_wrap=False,
                     )
                 )
-                 
+          elif name in{ "write_file", 'edit'} and success:
+             output_lines  = output.strip() if output.strip() else 'Completed'
+             blocks.append(Text(output_lines, style="muted"))
+             diff_text  = diff
+             diff_display = truncate_text(diff_text, 
+             self.config.model_name, 
+             self._max_block_tokens)
 
-          args = self._tool_args_by_call_id.get(call_id, {})
+             blocks.append(Syntax(diff_display, "diff", theme="monokai", word_wrap=True))
+          
+          elif name == 'shell':
+             command = args.get('command')
+             if isinstance(command, str) and  command.strip():
+                blocks.append(Text(f'$ ${command.strip()}', style='muted'))
+             if exit_code is not None:
+                 blocks.append(Text(f'exit_code={exit_code}', style='muted'))
+             output_display= truncate_text(output, self.config.model_name, self._max_block_tokens)
+             blocks.append(
+                    Syntax(
+                        output_display,
+                        "text",
+                        theme="monokai",
+                        word_wrap=False,
+                    )
+                )
+         
 
           if truncated:
                blocks.append(
