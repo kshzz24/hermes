@@ -326,9 +326,8 @@ class TUI:
              self.config.model_name, 
              self._max_block_tokens)
 
-             blocks.append(Syntax(diff_display, "diff", theme="monokai", word_wrap=True))
-          
-          elif name == 'shell':
+             blocks.append(Syntax(diff_display, "diff", theme="monokai", word_wrap=True))      
+          elif name == 'shell' and success:
              command = args.get('command')
              if isinstance(command, str) and  command.strip():
                 blocks.append(Text(f'$ ${command.strip()}', style='muted'))
@@ -343,7 +342,50 @@ class TUI:
                         word_wrap=False,
                     )
                 )
-         
+          elif name == 'list_dir' and success:
+              entries = metadata.get('entries')
+              path = metadata.get('path')
+              summary = []
+              if isinstance(path, str): 
+                 summary.append(path)
+              if isinstance(entries, int):
+                  summary.append(f"{entries} entries")
+              if summary:
+                blocks.append(Text(" • ".join(summary), style="muted"))
+              output_display = truncate_text(
+                output,
+                self.config.model_name,
+                self._max_block_tokens,
+                )
+              blocks.append(
+                Syntax(
+                    output_display,
+                    "text",
+                    theme="monokai",
+                    word_wrap=True,
+                )
+            )
+
+
+
+     
+
+
+
+
+          if error and not success:
+             blocks.append(Text(error, style='error'))
+             truncate_text(output, self.config.model_name, self._max_block_tokens)
+             if output_display.strip(): 
+                blocks.append( Syntax(
+                    output_display,
+                    "text",
+                    theme="monokai",
+                    word_wrap=True,
+                ))
+             else: 
+                blocks.append(Text('(no output)', style='muted'))
+             
 
           if truncated:
                blocks.append(
@@ -352,7 +394,6 @@ class TUI:
                          style="warning",
                     )
                )
-
           panel = Panel(
             Group(
                 *blocks,
