@@ -81,7 +81,7 @@ def load_config(cwd:Path | None) ->Config:
 
         config_dict: dict[str, Any] = {}
 
-        if system_path.is_file():
+        if system_path.is_file() and system_path.stat().st_size > 0:
             try:
                 config_dict = _parse_toml(system_path)
             except ConfigError:
