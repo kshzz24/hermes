@@ -15,7 +15,7 @@ import asyncio
 class LLMClient:
     def __init__(self, config:Config) -> None:
         self._client: AsyncOpenAI | None = None
-        self._max_retries:int = 3
+        self._max_retries:int = 8
         self.config = config
         # print(config)
     

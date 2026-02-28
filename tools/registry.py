@@ -7,6 +7,8 @@ from typing import Any
 from pathlib import Path
 import logging
 from tools.base import Tool
+from tools.subagent import SubagentTool, get_default_subagent_definitions
+
 logger = logging.getLogger(__name__)
 
 class ToolRegistry: 
@@ -35,9 +37,18 @@ class ToolRegistry:
         return self._tools.get(name)
     
     def get_tools(self) -> list[Tool]:
-        tools:list[Tool] = []
+        tools: list[Tool] = []
+
         for tool in self._tools.values():
             tools.append(tool)
+
+        # for mcp_tool in self._mcp_tools.values():
+        #     tools.append(mcp_tool)
+
+        if self.config.allowed_tools:
+            allowed_set = set(self.config.allowed_tools)
+            tools = [t for t in tools if t.name in allowed_set]
+
         return tools
     
     def get_schemas(self) -> list[dict[str, Any]]:
@@ -62,14 +73,14 @@ class ToolRegistry:
              logger.exception(f"Tool {name} raised unexpected error")
              return ToolResult.error_result(f"Tool {name} raised unexpected error: {str(e)}", metadata={'tool_name': name})
         return result
-              
 
+def create_default_registry(config: Config) -> ToolRegistry:
+    registry = ToolRegistry(config)
 
+    for tool_class in get_all_builtin_tools():
+        registry.register(tool_class(config))
 
-def create_default_registry(config:Config) -> ToolRegistry:
-     registry = ToolRegistry(config)
-     BUILTIN_TOOLS = get_all_builtin_tools()
-     for tool in BUILTIN_TOOLS:
-          registry.register(tool(config))
+    for subagent_def in get_default_subagent_definitions():
+        registry.register(SubagentTool(config, subagent_def))
 
-     return registry
+    return registry

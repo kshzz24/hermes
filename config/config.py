@@ -38,6 +38,10 @@ class Config(BaseModel):
      cwd:Path = Field(default_factory=Path.cwd)
      shell_environment:ShellEnvironmentPolicy = Field(default_factory=ShellEnvironmentPolicy)
      max_turns:int = 100
+     allowed_tools: list[str] | None = Field(
+        None,
+        description="If set, only these tools will be available to the agent",
+    )
      max_tool_output_tokens:int = 50_000
      developers_instructions: str | None = None
      user_instructions: str | None = None
