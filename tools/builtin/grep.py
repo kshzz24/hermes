@@ -28,7 +28,7 @@ class GrepTool(Tool):
          search_path = resolve_path(invocation.cwd, params.path)
 
          if not search_path.exists():
-            return ToolResult.error_result(f"Path Does not exists ${dir_path}")
+            return ToolResult.error_result(f"Path does not exist: {search_path}")
          
          try:
             flags = re.IGNORECASE if params.case_insensitive else 0
