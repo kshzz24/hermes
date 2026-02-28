@@ -3,6 +3,7 @@ from utils.errors import ConfigError
 from pathlib import Path
 from config.config import Config
 from platformdirs import user_config_dir
+from dotenv import load_dotenv
 import tomli
 import logging
 logger = logging.getLogger(__name__)
@@ -70,6 +71,8 @@ def _merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, An
 
 def load_config(cwd:Path | None) ->Config:
         cwd = cwd or Path.cwd()
+
+        load_dotenv(dotenv_path=cwd / ".env")
 
         system_path = get_system_config_path()
 

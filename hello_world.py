@@ -4,7 +4,7 @@ def is_palindrome(s):
     return s == s[::-1]
 
 # Test the palindrome function
-test_string = "racecar"
+test_string = "nitin"
 print(f"'{test_string}' is palindrome: {is_palindrome(test_string)}")
 
 test_string = "hello"

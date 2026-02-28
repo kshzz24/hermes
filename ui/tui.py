@@ -119,7 +119,7 @@ class TUI:
                     byte_count = len(value.encode("utf-8", errors="replace"))
                     value = f"<{line_count} lines • {byte_count} bytes>"
 
-            if isinstance(value, bool):
+            if not isinstance(value, str):
                 value = str(value)
 
             table.add_row(key, value)
@@ -365,17 +365,47 @@ class TUI:
                     word_wrap=True,
                 )
             )
+          elif name == 'grep' and success:
+             matches = metadata.get('matches')
+             files_searched = metadata.get('files_searched')
+             summary = []
+             if isinstance(matches ,int):
+                summary.append(f"searched {files_searched} files") 
+             if summary:
+                blocks.append(Text(" • ".join(summary), style="muted"))
 
+             output_display = truncate_text(
+                output, self.config.model_name, self._max_block_tokens
+                 )
+             blocks.append(
+                Syntax(
+                    output_display,
+                    "text",
+                    theme="monokai",
+                    word_wrap=True,
+                )
+            )   
+          elif name == "glob" and success:
+            matches = metadata.get("matches")
+            if isinstance(matches, int):
+                blocks.append(Text(f"{matches} matches", style="muted"))
 
-
-     
-
-
-
-
+            output_display = truncate_text(
+                output,
+                self.config.model_name,
+                self._max_block_tokens,
+            )
+            blocks.append(
+                Syntax(
+                    output_display,
+                    "text",
+                    theme="monokai",
+                    word_wrap=True,
+                )
+            )
           if error and not success:
              blocks.append(Text(error, style='error'))
-             truncate_text(output, self.config.model_name, self._max_block_tokens)
+             output_display = truncate_text(output, self.config.model_name, self._max_block_tokens)
              if output_display.strip(): 
                 blocks.append( Syntax(
                     output_display,
@@ -410,4 +440,31 @@ class TUI:
           self.console.print(panel)
             
      def tool_call_end(self, call_id:str, name:str, result:str)-> None:
-          self.console.print(f"[tool] {name} completed with {result}")     
+          self.console.print(f"[tool] {name} completed with {result}")  
+     def show_help(self) -> None:
+        help_text = """
+## Commands
+
+- `/help` - Show this help
+- `/exit` or `/quit` - Exit the agent
+- `/clear` - Clear conversation history
+- `/config` - Show current configuration
+- `/model <name>` - Change the model
+- `/approval <mode>` - Change approval mode
+- `/stats` - Show session statistics
+- `/tools` - List available tools
+- `/mcp` - Show MCP server status
+- `/save` - Save current session
+- `/checkpoint [name]` - Create a checkpoint
+- `/checkpoints` - List available checkpoints
+- `/restore <checkpoint_id>` - Restore a checkpoint
+- `/sessions` - List saved sessions
+- `/resume <session_id>` - Resume a saved session
+
+## Tips
+
+- Just type your message to chat with the agent
+- The agent can read, write, and execute code
+- Some operations require approval (can be configured)
+"""
+        self.console.print(Markdown(help_text))   
