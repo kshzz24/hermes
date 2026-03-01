@@ -1,4 +1,5 @@
 from dataclasses import field
+from datetime import datetime
 from prompts.system import get_system_prompt
 from dataclasses import dataclass
 from tools.base import Tool
@@ -12,7 +13,8 @@ class MessageItem:
      content:str
      tool_call_id:str|None = None
      tool_calls: list[dict[str, Any]] = field(default_factory=list)
-     token_count:int|None = None
+     token_count: int | None = None
+     pruned_at: datetime | None = None
 
      def to_dict(self) -> dict[str,Any]:
           result: dict[str, Any] = {'role': self.role, }
@@ -25,6 +27,8 @@ class MessageItem:
           return result
 
 class ContextManager:
+     PRUNE_PROTECT_TOKENS = 40_000
+     PRUNE_MINIMUM_TOKENS = 20_000
      def __init__(
           self,config,
           user_memory: str | None, 
