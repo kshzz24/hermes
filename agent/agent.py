@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from config.config import Config
 from agent.events import AgentEventType, AgentEvent
-from client.response import ToolResultMessage
+from client.response import TokenUsage, ToolResultMessage
 from pathlib import Path
 from client.response import ToolCall
 from agent.session import Session
@@ -35,6 +35,20 @@ class Agent:
         for turn_num in range(max_turns):  
           self.session.increment_turn()
           response_text = ""
+          
+          if self.session.context_manager.needs_compression():
+                summary, usage = await self.session.chat_compactor.compress(
+                    self.session.context_manager
+                )
+
+                if summary:
+                    self.session.context_manager.replace_with_summary(summary)
+                    self.session.context_manager.set_latest_usage(usage)
+                    self.session.context_manager.add_usage(usage)
+
+
+          usage:TokenUsage | None = None
+
           tools_schema = self.session.tool_registry.get_schemas()
           tool_calls:list[ToolCall] = []
           async for event in self.session.client.chat_completion(self.session.context_manager.get_messages(), tools=tools_schema if tools_schema else None, stream=True):
@@ -44,15 +58,13 @@ class Agent:
                          content = event.text_delta.content
                          response_text += content
                          yield AgentEvent.text_delta(content)
-               #   elif event.type == StreamEventType.TOOL_CALL_START:
-               #        yield AgentEvent.tool_call_start(event.tool_call_delta.call_id, event.tool_call_delta.name)
-               #   elif event.type == StreamEventType.TOOL_CALL_DELTA:
-               #        yield AgentEvent.tool_call_delta(event.tool_call_delta.call_id, event.tool_call_delta.arguments)
                elif event.type == StreamEventType.TOOL_CALL_COMPLETE:
                     if event.tool_call:
                          tool_calls.append(event.tool_call) 
                elif event.type == StreamEventType.ERROR:
                     yield AgentEvent.agent_error(event.error or "Unknown error occured")
+               elif event.type == StreamEventType.MESSAGE_COMPLETE: 
+                    usage = event.usage
           
           self.session.context_manager.add_assistant_message(response_text or None, [{
                "id": tc.call_id,
@@ -67,7 +79,12 @@ class Agent:
                yield AgentEvent.text_complete(response_text)
           
           if not tool_calls:
-             return
+              if usage:
+                    self.session.context_manager.set_latest_usage(usage)
+                    self.session.context_manager.add_usage(usage)
+
+              self.session.context_manager.prune_tool_outputs() 
+              return
 
           tool_call_results: list[ToolResultMessage] = []
           for tool_call in tool_calls:
@@ -80,6 +97,9 @@ class Agent:
           for tool_result in tool_call_results:
                self.session.context_manager.add_tool_result(tool_result.tool_call_id, tool_result.content) 
 
+          if usage:
+                self.session.context_manager.set_latest_usage(usage)
+                self.session.context_manager.add_usage(usage)
 
             
      async def __aenter__(self)->Agent:

@@ -1,5 +1,5 @@
 [model]
-name="qwen/qwen3-coder:free"
+name="stepfun/step-3.5-flash:free"
 temperature = 0
 
 [[hooks]]
