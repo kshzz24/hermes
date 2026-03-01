@@ -11,7 +11,13 @@ class ModelConfig(BaseModel):
      temperature: float = Field(default=1, ge=0.0, le=2.0)
      context_window: int = 256_000
 
-     
+class HookConfig(BaseModel):
+    name: str
+    trigger: HookTrigger
+    command: str | None = None  # python3 tests.py
+    script: str | None = None  # *.sh
+    timeout_sec: float = 30
+    enabled: bool = True    
 class ShellEnvironmentPolicy(BaseModel):
     ignore_default_excludes: bool = False
     exclude_patterns: list[str] = Field(
@@ -63,11 +69,20 @@ class HookTrigger(str, Enum):
     BEFORE_TOOL = "before_tool"
     AFTER_TOOL = "after_tool"
     ON_ERROR = "on_error"
+    
+    @model_validator(mode="after")
+    def validate_hook(self) -> HookConfig:
+        if not self.command and not self.script:
+            raise ValueError("Hook must either have 'command' or 'script'")
+        return self
 class Config(BaseModel): 
      model: ModelConfig = Field(default_factory=ModelConfig)
      cwd:Path = Field(default_factory=Path.cwd)
      shell_environment:ShellEnvironmentPolicy = Field(default_factory=ShellEnvironmentPolicy)
      max_turns:int = 100
+     hooks_enabled: bool = False
+     hooks: list[HookConfig] = Field(default_factory=list)
+     approval: ApprovalPolicy = ApprovalPolicy.ON_REQUEST
      mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
      allowed_tools: list[str] | None = Field(
         None,

@@ -2,6 +2,8 @@ import json
 from config.config import Config
 from config.loader import get_data_dir
 from context.compaction import ChatCompactor
+from hooks.hook_system import HookSystem
+from safety.approval import ApprovalManager
 from tools.discovery import ToolDiscoveryManager
 from tools.mcp.mcp_manager import MCPManager
 from tools.registry import create_default_registry
@@ -23,7 +25,12 @@ class Session:
         )
           self.mcp_manager = MCPManager(self.config)
           self.chat_compactor = ChatCompactor(self.client)
+          self.approval_manager = ApprovalManager(
+            self.config.approval,
+            self.config.cwd,
+            )
           self.session_id = str(uuid.uuid4())
+          self.hook_system = HookSystem(config)
           self.created_at = datetime.now()
           self.updated_at = datetime.now()
           self._turn_count = 0

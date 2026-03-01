@@ -1,23 +1,26 @@
 from __future__ import annotations
 import json
+from typing import AsyncGenerator, Awaitable, Callable
 from config.config import Config
 from agent.events import AgentEventType, AgentEvent
 from client.response import TokenUsage, ToolResultMessage
-from pathlib import Path
 from client.response import ToolCall
 from agent.session import Session
 from client.response import StreamEventType
-from typing import AsyncGenerator
-
+from tools.base import ToolConfirmation
 
 
 class Agent:
-     def __init__(self,config:Config) -> None:
+     def __init__(self,config:Config, 
+     confirmation_callback: Callable[[ToolConfirmation], bool] | None = None,) -> None:
           self.config = config
           self.session:Session | None = Session(self.config)
+          self.session.approval_manager.confirmation_callback = confirmation_callback
 
 
      async def run(self, message:str):
+        
+        await self.session.hook_system.trigger_before_agent(message)
         yield AgentEvent.agent_start(message)
         self.session.context_manager.add_user_message(message)
         # add user context message for the context
@@ -27,7 +30,7 @@ class Agent:
 
             if event.type == AgentEventType.TEXT_COMPLETE:
               final_response  = event.data.get("content")
-         
+        await self.session.hook_system.trigger_after_agent(message, final_response) 
         yield AgentEvent.agent_end(final_response)
      
      async def _agentic_loop(self)->AsyncGenerator[AgentEvent, None]:
@@ -90,7 +93,13 @@ class Agent:
           for tool_call in tool_calls:
                yield AgentEvent.tool_call_start(tool_call.call_id, tool_call.name, tool_call.arguments)
 
-               result = await self.session.tool_registry.invoke(tool_call.name, tool_call.arguments, self.config.cwd)
+               result = await self.session.tool_registry.invoke(
+               tool_call.name, 
+               tool_call.arguments, 
+               self.config.cwd,                    
+               self.session.hook_system,
+               self.session.approval_manager
+               )
                yield AgentEvent.tool_call_complete(tool_call.call_id, tool_call.name, result)
                tool_call_results.append(ToolResultMessage(tool_call_id=tool_call.call_id, content=result.to_model_output(), is_error=not result.success))
 

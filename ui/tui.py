@@ -1,5 +1,6 @@
 
 from rich.syntax import Syntax
+from tools.base import ToolConfirmation
 from utils.text import truncate_text
 from pathlib import Path
 from utils.path import display_path_rel_to_cwd
@@ -10,6 +11,7 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.rule import Rule
 from rich.text import Text
+from rich.prompt import Prompt
 from rich import box
 from rich.console import Group
 from typing import Tuple
@@ -541,6 +543,44 @@ class TUI:
             
      def tool_call_end(self, call_id:str, name:str, result:str)-> None:
           self.console.print(f"[tool] {name} completed with {result}")  
+     def handle_confirmation(self, confirmation: ToolConfirmation) -> bool:
+        output = [
+            Text(confirmation.tool_name, style="tool"),
+            Text(confirmation.description, style="code"),
+        ]
+
+        if confirmation.command:
+            output.append(Text(f"$ {confirmation.command}", style="warning"))
+
+        if confirmation.diff:
+            diff_text = confirmation.diff.to_diff()
+            output.append(
+                Syntax(
+                    diff_text,
+                    "diff",
+                    theme="monokai",
+                    word_wrap=True,
+                )
+            )
+
+        self.console.print()
+        self.console.print(
+            Panel(
+                Group(*output),
+                title=Text("Approval required", style="warning"),
+                title_align="left",
+                border_style="warning",
+                box=box.ROUNDED,
+                padding=(1, 2),
+            )
+        )
+
+        response = Prompt.ask(
+            "\nApprove?", choices=["y", "n", "yes", "no"], default="n"
+        )
+
+        return response.lower() in {"y", "yes"}
+
      def show_help(self) -> None:
         help_text = """
 ## Commands

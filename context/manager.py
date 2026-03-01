@@ -80,7 +80,7 @@ class ContextManager:
         self.total_usage += usage
 
      def replace_with_summary(self, summary: str) -> None:
-        self._messages = []
+        self.messages = []
 
         continuation_content = f"""# Context Restoration (Previous Session Compacted)
 
@@ -101,7 +101,7 @@ class ContextManager:
             content=continuation_content,
             token_count=count_tokens(continuation_content, self._model_name),
         )
-        self._messages.append(summary_item)
+        self.messages.append(summary_item)
 
         ack_content = """I've reviewed the context from the previous session. I understand:
           - The original goal and what was requested
@@ -115,7 +115,7 @@ class ContextManager:
             content=ack_content,
             token_count=count_tokens(ack_content, self._model_name),
         )
-        self._messages.append(ack_item)
+        self.messages.append(ack_item)
 
         continue_content = (
             "Continue with the REMAINING work only. Do NOT repeat any completed actions. "
@@ -127,10 +127,10 @@ class ContextManager:
             content=continue_content,
             token_count=count_tokens(continue_content, self._model_name),
         )
-        self._messages.append(continue_item)
+        self.messages.append(continue_item)
 
      def prune_tool_outputs(self) -> int:
-        user_message_count = sum(1 for msg in self._messages if msg.role == "user")
+        user_message_count = sum(1 for msg in self.messages if msg.role == "user")
 
         if user_message_count < 2:
             return 0
@@ -139,7 +139,7 @@ class ContextManager:
         pruned_tokens = 0
         to_prune: list[MessageItem] = []
 
-        for msg in reversed(self._messages):
+        for msg in reversed(self.messages):
             if msg.role == "tool" and msg.tool_call_id:
                 if msg.pruned_at:
                     break
@@ -165,4 +165,4 @@ class ContextManager:
         return pruned_count
 
      def clear(self) -> None:
-        self._messages = []
+        self.messages = []

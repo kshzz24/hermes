@@ -4,6 +4,8 @@ from tools.builtin import get_all_builtin_tools
 from tools.base import ToolInvocation
 from tools.base import ToolResult
 from typing import Any
+from hooks.hook_system import HookSystem
+from safety.approval import ApprovalContext, ApprovalDecision, ApprovalManager
 from pathlib import Path
 import logging
 from tools.base import Tool
@@ -64,21 +66,70 @@ class ToolRegistry:
     def get_all(self) -> list[Tool]:
         return list(self._tools.values())
 
-    async def invoke(self, name:str, params:dict[str, Any], cwd:Path) -> ToolResult:
+    async def invoke(self, 
+    name:str, 
+    params:dict[str, Any], 
+    cwd:Path,     
+    hook_system: HookSystem,
+    approval_manager: ApprovalManager | None = None,
+    ) -> ToolResult:
         tool = self.get(name)
         if tool is None:
-            return ToolResult.error_result(f"Tool {name} not found", metadata={'tool_name': name})
+            result = ToolResult.error_result(
+                f"Unknown tool: {name}",
+                metadata={"tool_name": name},
+             )
+            await hook_system.trigger_after_tool(name, params, result)
+            return result
         
-        errors = tool.validate_params(params)
-        if errors:
-            return ToolResult.error_result(f"Validation errors: {', '.join(errors)}")
-        
+        validation_errors = tool.validate_params(params)
+        if validation_errors:
+            result = ToolResult.error_result(
+                f"Invalid parameters: {'; '.join(validation_errors)}",
+                metadata={
+                    "tool_name": name,
+                    "validation_errors": validation_errors,
+                },
+            )
+
+            await hook_system.trigger_after_tool(name, params, result)
+
+            return result
+        await hook_system.trigger_before_tool(name, params)
         invocation = ToolInvocation(cwd=cwd, params=params)
+        if approval_manager:
+            confirmation = await tool.get_confirmation(invocation)
+            if confirmation:
+                context = ApprovalContext(
+                    tool_name=name,
+                    params=params,
+                    is_mutating=tool.is_mutating(params),
+                    affected_paths=confirmation.affected_paths,
+                    command=confirmation.command,
+                    is_dangerous=confirmation.is_dangerous,
+                )
+
+                decision = await approval_manager.check_approval(context)
+                if decision == ApprovalDecision.REJECTED:
+                    result = ToolResult.error_result(
+                        "Operation rejected by safety policy"
+                    )
+                    await hook_system.trigger_after_tool(name, params, result)
+                    return result
+                elif decision == ApprovalDecision.NEEDS_CONFIRMATION:
+                    approved = approval_manager.request_confirmation(confirmation)
+
+                    if not approved:
+                        result = ToolResult.error_result("User rejected the operation")
+                        await hook_system.trigger_after_tool(name, params, result)
+                        return result
+
         try:
           result = await tool.execute(invocation)   
         except Exception as e:
              logger.exception(f"Tool {name} raised unexpected error")
              return ToolResult.error_result(f"Tool {name} raised unexpected error: {str(e)}", metadata={'tool_name': name})
+        await hook_system.trigger_after_tool(name, params, result)
         return result
 
 def create_default_registry(config: Config) -> ToolRegistry:
