@@ -1,10 +1,12 @@
 from anyio import Path
 import click
+from agent.persistence import PersistenceManager, SessionSnapshot
+from agent.session import Session
 from config.loader import load_config
 import sys
 from ui.tui import TUI, get_console
 from agent.events import AgentEventType
-from config.config import Config
+from config.config import ApprovalPolicy, Config
 from agent.agent import Agent
 import asyncio
 import click
@@ -37,11 +39,15 @@ class CLI:
 
                while True:
                   try:
-                    user_input = console.input("\n[user] > [/user] ").strip()
+                    user_input = console.input("\n[user]>[/user] ").strip()
                     if not user_input:
-                         continue
-                    if user_input.lower() == "/exit":
-                         break
+                            continue
+
+                    if user_input.startswith("/"):
+                            should_continue = await self._handle_command(user_input)
+                            if not should_continue:
+                                break
+                            continue
                     await self.process_message(user_input)
                   except KeyboardInterrupt:
                         console.print(f"\n[dim]Use /exit to quit[/dim]")
@@ -296,9 +302,6 @@ class CLI:
 
         return True
 
-
-async def run(messages: dict[str,any]):
-     pass
 
 @click.command()
 @click.argument("prompt", required=False)

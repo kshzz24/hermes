@@ -17,6 +17,7 @@ from rich.console import Group
 from typing import Tuple
 from config.config import Config
 import re
+from rich.markdown import Markdown
 
 AGENT_THEME = Theme(
     {

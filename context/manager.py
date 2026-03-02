@@ -40,6 +40,10 @@ class ContextManager:
           self.model_name = self.config.model_name
           self._latest_usage = TokenUsage()
           self.total_usage = TokenUsage()
+     
+     @property
+     def message_count(self) -> int:
+        return len(self.messages)
 
      def add_user_message(self, content:str)-> None:
           item = MessageItem(role="user", content=content, token_count=count_tokens(content,self.model_name))
@@ -99,7 +103,7 @@ class ContextManager:
         summary_item = MessageItem(
             role="user",
             content=continuation_content,
-            token_count=count_tokens(continuation_content, self._model_name),
+            token_count=count_tokens(continuation_content, self.model_name),
         )
         self.messages.append(summary_item)
 
@@ -113,7 +117,7 @@ class ContextManager:
         ack_item = MessageItem(
             role="assistant",
             content=ack_content,
-            token_count=count_tokens(ack_content, self._model_name),
+            token_count=count_tokens(ack_content, self.model_name),
         )
         self.messages.append(ack_item)
 
@@ -125,7 +129,7 @@ class ContextManager:
         continue_item = MessageItem(
             role="user",
             content=continue_content,
-            token_count=count_tokens(continue_content, self._model_name),
+            token_count=count_tokens(continue_content, self.model_name),
         )
         self.messages.append(continue_item)
 
@@ -144,7 +148,7 @@ class ContextManager:
                 if msg.pruned_at:
                     break
 
-                tokens = msg.token_count or count_tokens(msg.content, self._model_name)
+                tokens = msg.token_count or count_tokens(msg.content, self.model_name)
                 total_tokens += tokens
 
                 if total_tokens > self.PRUNE_PROTECT_TOKENS:
@@ -158,7 +162,7 @@ class ContextManager:
 
         for msg in to_prune:
             msg.content = "[Old tool result content cleared]"
-            msg.token_count = count_tokens(msg.content, self._model_name)
+            msg.token_count = count_tokens(msg.content, self.model_name)
             msg.pruned_at = datetime.now()
             pruned_count += 1
 
